@@ -67,8 +67,8 @@ export default function SetupPage() {
 				<button
 					type="submit"
 					disabled={loading}
-					className={`w-full bg-primary text-secondary p-3 rounded-lg transition-colors
-            ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-900'}`}
+					className={`w-full bg-primary text-white p-3 rounded-lg ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-dark'
+						}`}
 				>
 					{loading ? 'Generating Quiz...' : 'Generate Quiz'}
 				</button>

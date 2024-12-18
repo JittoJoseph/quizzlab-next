@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Header from '@/components/Header';
+import clsx from 'clsx';
 
 interface Option {
 	id: string;
@@ -17,73 +19,97 @@ interface Question {
 
 export default function QuizPage() {
 	const router = useRouter();
-	const [currentQuestion, setCurrentQuestion] = useState(0);
-	const [selectedOption, setSelectedOption] = useState<string | null>(null);
-	const [questions, setQuestions] = useState<Question[]>([]);
+	const searchParams = useSearchParams();
 	const [loading, setLoading] = useState(true);
+	const [score, setScore] = useState(0);
+	const [quizData, setQuizData] = useState<Question[]>([]);
+	const [questionNumber, setQuestionNumber] = useState(0);
+	const [selectedOption, setSelectedOption] = useState<number | null>(null);
+	const [showAnswer, setShowAnswer] = useState(false);
+	const [isLastQuestion, setIsLastQuestion] = useState(false);
 
 	useEffect(() => {
-		const quizData = localStorage.getItem('quizData');
-		if (!quizData) {
+		const storedQuizData = JSON.parse(localStorage.getItem('quizData') || '[]');
+		const currentQuestionNum = parseInt(searchParams.get('id') || '1');
+
+		if (!storedQuizData.length) {
 			router.push('/setup');
 			return;
 		}
 
-		const parsedData = JSON.parse(quizData);
-		// Convert API response format to UI format
-		const formattedQuestions = parsedData.questions.map((q: any, index: number) => ({
-			id: index + 1,
-			question: q.question,
-			options: q.options.map((opt: string, i: number) => ({
-				id: String.fromCharCode(97 + i), // converts 0,1,2,3 to a,b,c,d
-				text: opt
-			})),
-			correctAnswer: q.correctAnswer
-		}));
-
-		setQuestions(formattedQuestions);
+		setQuizData(storedQuizData);
+		setQuestionNumber(currentQuestionNum);
 		setLoading(false);
-	}, [router]);
+	}, [searchParams, router]);
 
-	if (loading) {
-		return <div>Loading quiz...</div>;
-	}
+	const currentQuestion = quizData[questionNumber - 1];
 
-	const handleNext = () => {
-		if (currentQuestion < questions.length - 1) {
-			setCurrentQuestion(prev => prev + 1);
-			setSelectedOption(null);
+	const handleOptionSelect = (optionIndex: number) => {
+		if (showAnswer) return;
+		setSelectedOption(optionIndex);
+		setShowAnswer(true);
+		if (optionIndex === currentQuestion.correctAnswer) {
+			setScore(prev => prev + 1);
 		}
 	};
 
+	const handleNext = () => {
+		if (!showAnswer) return;
+
+		if (isLastQuestion) {
+			localStorage.setItem('quizResult', JSON.stringify({ score, total: quizData.length }));
+			router.push('/results');
+		} else {
+			setSelectedOption(null);
+			setShowAnswer(false);
+			router.push(`/quiz/${questionNumber + 1}`);
+		}
+	};
+
+	if (loading || !currentQuestion) return <div>Loading...</div>;
+
 	return (
-		<main className="min-h-screen flex items-center justify-center bg-secondary p-4">
-			<div className="bg-white shadow-lg rounded-lg p-8 max-w-2xl w-full">
-				<div className="mb-8">
-					<h2 className="text-2xl font-semibold text-primary mb-6">
-						{questions[currentQuestion].question}
-					</h2>
-					<div className="space-y-4">
-						{questions[currentQuestion].options.map((option) => (
+		<main className="min-h-screen bg-secondary">
+			<Header score={score} total={quizData.length} />
+			<div className="flex items-center justify-center p-4 h-screen">
+				<div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+					<h2 className="text-xl mb-4">Question {questionNumber}</h2>
+					<p className="text-lg mb-6">{currentQuestion.question}</p>
+
+					<div className="space-y-3">
+						{currentQuestion.options.map((option, index) => (
 							<button
-								key={option.id}
-								onClick={() => setSelectedOption(option.id)}
-								className={`w-full text-left p-4 rounded-lg border ${selectedOption === option.id
-									? 'bg-primary text-white'
-									: 'bg-white text-primary hover:bg-blue-50'
-									}`}
+								key={index}
+								onClick={() => handleOptionSelect(index)}
+								disabled={showAnswer}
+								className={clsx(
+									"w-full p-3 text-left rounded-lg transition-colors border",
+									{
+										'bg-green-100 border-green-500': showAnswer && index === currentQuestion.correctAnswer,
+										'bg-red-100 border-red-500': showAnswer && selectedOption === index && index !== currentQuestion.correctAnswer,
+										'hover:bg-gray-100': !showAnswer,
+										'border-gray-200': !showAnswer && selectedOption !== index,
+										'border-blue-500 bg-blue-50': !showAnswer && selectedOption === index
+									}
+								)}
 							>
 								{option.text}
 							</button>
 						))}
 					</div>
-				</div>
-				<div className="flex justify-end">
+
 					<button
 						onClick={handleNext}
-						className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-900 transition-colors"
+						disabled={!showAnswer}
+						className={clsx(
+							"w-full bg-primary text-white p-3 rounded-lg mt-6 transition-opacity",
+							{
+								'opacity-50 cursor-not-allowed': !showAnswer,
+								'hover:bg-blue-900': showAnswer
+							}
+						)}
 					>
-						Next
+						{isLastQuestion ? 'Finish Quiz' : 'Next Question'}
 					</button>
 				</div>
 			</div>

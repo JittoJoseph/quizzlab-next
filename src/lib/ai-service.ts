@@ -100,6 +100,18 @@ function shuffleOptions(question: any) {
 	return question;
 }
 
+function cleanupJsonString(text: string): string {
+	return text
+		.replace(/[\u201C\u201D\u2018\u2019]/g, '"') // Replace smart quotes
+		.replace(/```json\s*|\s*```/g, '') // Remove markdown code blocks
+		.replace(/\n\s*/g, '') // Remove newlines and extra spaces
+		.replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
+		.replace(/([{,]\s*)(\w+)(:)/g, '$1"$2"$3') // Ensure property names are quoted
+		.replace(/"\s*,\s*([}\]])/g, '"$1') // Fix trailing commas before closing brackets
+		.replace(/\[\s*"([^"]+)"\s*,/g, '["$1",') // Fix array formatting
+		.trim();
+}
+
 export async function generateQuizContent(topic: string, difficulty: string): Promise<{ quiz: Quiz, metadata: GenerationMetadata }> {
 	try {
 		if (!process.env.GOOGLE_API_KEY) {
@@ -128,14 +140,7 @@ Rules:
 
 		const generation = await fetchWithRetry(prompt);
 
-		const processedText = generation.response
-			.replace(/[\u201C\u201D\u2018\u2019]/g, '"')
-			.replace(/```json\s*|\s*```/g, '')
-			.replace(/\n/g, '')
-			.replace(/,\s*([}\]])/g, '$1')
-			.replace(/([{,]\s*)(\w+)(:)/g, '$1"$2"$3')
-			.replace(/\[\s*\[(.*?)\]\s*,/g, '["$1",')
-			.trim();
+		const processedText = cleanupJsonString(generation.response);
 
 		if (!processedText.startsWith('{') || !processedText.endsWith('}')) {
 			throw new QuestionGenerationError('Invalid JSON structure in AI response');

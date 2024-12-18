@@ -39,6 +39,7 @@ export default function QuizPage() {
 
 		setQuizData(storedQuizData);
 		setQuestionNumber(currentQuestionNum);
+		setIsLastQuestion(currentQuestionNum === storedQuizData.length);
 		setLoading(false);
 	}, [searchParams, router]);
 
@@ -66,10 +67,12 @@ export default function QuizPage() {
 		}
 	};
 
-	if (loading || !currentQuestion) return <div>Loading...</div>;
+	if (loading || !currentQuestion) {
+		return <div className="min-h-screen bg-secondary flex items-center justify-center">Loading...</div>;
+	}
 
 	return (
-		<main className="min-h-screen bg-secondary">
+		<div className="min-h-screen bg-secondary">
 			<Header score={score} total={quizData.length} />
 			<div className="flex items-center justify-center p-4 h-screen">
 				<div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
@@ -113,6 +116,6 @@ export default function QuizPage() {
 					</button>
 				</div>
 			</div>
-		</main>
+		</div>
 	);
 }

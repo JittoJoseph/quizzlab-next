@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Quiz } from '@/types';
 
 export interface QuizQuestion {
 	question: string;
@@ -35,52 +36,124 @@ export async function fetchWithTimeout<T>(promise: Promise<T>, timeout: number):
 	]);
 }
 
-export async function generateQuizContent(topic: string, difficulty: string): Promise<QuizResponse> {
-	if (!process.env.GOOGLE_API_KEY) {
-		throw new AIServiceError('Missing API key');
+async function generateWithModel(modelName: string, prompt: string): Promise<string> {
+	console.log(`Attempting generation with ${modelName}`);
+	const startTime = Date.now();
+	const apiKey = process.env.GOOGLE_API_KEY;
+	if (!apiKey) {
+		throw new AIServiceError('Google API key is not configured');
+	}
+	const genAI = new GoogleGenerativeAI(apiKey);
+	const model = genAI.getGenerativeModel({ model: modelName });
+
+	const result = await fetchWithTimeout(
+		model.generateContent(prompt),
+		REQUEST_TIMEOUT
+	);
+
+	console.log(`${modelName} took ${(Date.now() - startTime) / 1000}s`);
+
+	if (!result?.response) {
+		throw new AIServiceError('No response from AI');
 	}
 
-	const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-	const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+	return result.response.text();
+}
 
-	const prompt = `Generate a quiz about ${topic} at ${difficulty} level with 10 multiple choice questions.
-    Return only valid JSON without markdown formatting or code blocks, following this exact structure:
-    {
-      "questions": [
-        {
-          "question": "Question text here?",
-          "options": ["Correct answer", "Wrong answer 1", "Wrong answer 2", "Wrong answer 3"],
-          "correctAnswer": 0
-        }
-      ]
-    }`;
+function shuffleOptions(question: any) {
+	const optionsWithIndex = question.options.map((text: string, index: number) => ({
+		text,
+		isCorrect: index === question.correct,
+	}));
 
+	for (let i = optionsWithIndex.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[optionsWithIndex[i], optionsWithIndex[j]] = [optionsWithIndex[j], optionsWithIndex[i]];
+	}
+
+	question.options = optionsWithIndex.map((opt: { text: string; isCorrect: boolean }) => opt.text);
+	question.correct = optionsWithIndex.findIndex((opt: { text: string; isCorrect: boolean }) => opt.isCorrect);
+
+	return question;
+}
+
+export async function generateQuizContent(topic: string, difficulty: string): Promise<Quiz> {
 	try {
-		const result = await fetchWithTimeout(
-			model.generateContent(prompt),
-			REQUEST_TIMEOUT
-		);
+		if (!process.env.GOOGLE_API_KEY) {
+			throw new Error('Google API key is not configured');
+		}
 
-		const text = result.response.text();
-		// Clean the response text of any markdown or code block syntax
-		const cleanJSON = text.replace(/```json\n|\n```|```/g, '').trim();
+		const prompt = `Generate 10 multiple choice questions about ${topic} at ${difficulty} level.
+
+Format as JSON:
+{
+  "questions": [
+    {
+      "question": "Question text?",
+      "options": ["Correct", "Wrong1", "Wrong2", "Wrong3"],
+      "correct": 0
+    }
+  ]
+}
+
+Rules:
+- Exactly 4 options per question
+- correct must be 0-3 matching the correct option's position
+- All options must be simple strings
+- One correct answer per question`;
+
+		console.log('Starting question generation...');
+		const text = await generateWithModel("gemini-1.5-flash", prompt);
+
+		const processedText = text
+			.replace(/[\u201C\u201D\u2018\u2019]/g, '"')
+			.replace(/```json\s*|\s*```/g, '')
+			.replace(/\n/g, '')
+			.replace(/,\s*([}\]])/g, '$1')
+			.replace(/([{,]\s*)(\w+)(:)/g, '$1"$2"$3')
+			.replace(/\[\s*\[(.*?)\]\s*,/g, '["$1",')
+			.trim();
+
+		if (!processedText.startsWith('{') || !processedText.endsWith('}')) {
+			throw new QuestionGenerationError('Invalid JSON structure in AI response');
+		}
 
 		try {
-			const parsed = JSON.parse(cleanJSON);
+			const parsed = JSON.parse(processedText);
 
-			// Validate response structure
-			if (!parsed.questions || !Array.isArray(parsed.questions)) {
-				throw new QuestionGenerationError('Invalid quiz format');
+			if (!parsed.questions?.length) {
+				throw new QuestionGenerationError('No questions in AI response');
 			}
 
-			return parsed as QuizResponse;
+			parsed.questions = parsed.questions.map((q: any, index: number) => {
+				if (!Array.isArray(q.options) || q.options.length !== 4) {
+					throw new QuestionGenerationError(`Invalid options array in question ${index + 1}`);
+				}
+
+				q.options = q.options.map((opt: any) => {
+					if (Array.isArray(opt)) {
+						return opt[0] || '';
+					}
+					return String(opt);
+				});
+
+				if (typeof q.correct !== 'number' || q.correct < 0 || q.correct >= q.options.length) {
+					throw new QuestionGenerationError(`Invalid correct answer index in question ${index + 1}`);
+				}
+
+				return shuffleOptions(q);
+			});
+
+			return parsed as Quiz;
+
 		} catch (parseError) {
-			throw new QuestionGenerationError('Invalid JSON response from AI');
+			console.error('JSON Parse Error:', parseError);
+			console.error('Processed Text:', processedText);
+			throw new QuestionGenerationError(`Invalid JSON format: ${(parseError as Error).message}`);
 		}
+
 	} catch (error) {
-		if (error instanceof Error) {
-			throw new QuestionGenerationError(`Generation failed: ${error.message}`);
-		}
-		throw new QuestionGenerationError('Failed to generate quiz');
+		console.error('Generation error:', error);
+		throw error;
 	}
 }

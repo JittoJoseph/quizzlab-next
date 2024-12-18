@@ -25,6 +25,7 @@ export class QuestionGenerationError extends Error {
 	}
 }
 
+const MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'] as const;
 const REQUEST_TIMEOUT = 13000;
 
 export async function fetchWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
@@ -60,6 +61,21 @@ async function generateWithModel(modelName: string, prompt: string): Promise<str
 	return result.response.text();
 }
 
+async function fetchWithRetry(prompt: string, maxAttempts = 2): Promise<string> {
+	for (const modelName of MODELS) {
+		try {
+			console.log(`Trying model: ${modelName}`);
+			return await generateWithModel(modelName, prompt);
+		} catch (error) {
+			console.error(`Failed with ${modelName}:`, error);
+			if (modelName === MODELS[MODELS.length - 1]) {
+				throw error;
+			}
+		}
+	}
+	throw new AIServiceError('All model attempts failed');
+}
+
 function shuffleOptions(question: any) {
 	const optionsWithIndex = question.options.map((text: string, index: number) => ({
 		text,
@@ -83,6 +99,7 @@ export async function generateQuizContent(topic: string, difficulty: string): Pr
 			throw new Error('Google API key is not configured');
 		}
 
+		console.log('Starting quiz generation...');
 		const prompt = `Generate 10 multiple choice questions about ${topic} at ${difficulty} level.
 
 Format as JSON:
@@ -102,8 +119,7 @@ Rules:
 - All options must be simple strings
 - One correct answer per question`;
 
-		console.log('Starting question generation...');
-		const text = await generateWithModel("gemini-1.5-flash", prompt);
+		const text = await fetchWithRetry(prompt);
 
 		const processedText = text
 			.replace(/[\u201C\u201D\u2018\u2019]/g, '"')

@@ -9,7 +9,8 @@ export default function SetupPage() {
 	const [difficulty, setDifficulty] = useState('Beginner');
 	const [loading, setLoading] = useState(false);
 
-	const handleGenerateQuiz = async () => {
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
 		if (!topic.trim()) {
 			alert('Please enter a topic');
 			return;
@@ -17,47 +18,60 @@ export default function SetupPage() {
 
 		setLoading(true);
 		try {
-			// Here you would make an API call to generate quiz
-			await new Promise(resolve => setTimeout(resolve, 1500));
-			router.push('/quiz');
+			const response = await fetch('/api/quiz', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ topic, difficulty })
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to generate quiz');
+			}
+
+			const quizData = await response.json();
+			localStorage.setItem('quizData', JSON.stringify(quizData));
+			router.push('/quiz/1');
 		} catch (error) {
 			console.error('Failed to generate quiz:', error);
+			alert(error instanceof Error ? error.message : 'Failed to generate quiz');
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	return (
-		<main className="min-h-screen flex items-center justify-center bg-secondary">
-			<div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-				<h1 className="text-3xl font-bold text-primary text-center mb-6">Quiz Setup</h1>
+		<div className="min-h-screen bg-secondary flex items-center justify-center p-4">
+			<form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+				<h1 className="text-2xl font-bold text-primary mb-6 text-center">Create Quiz</h1>
+
 				<input
 					type="text"
-					placeholder="Enter topic (e.g., 'World History', 'Python Programming')"
 					value={topic}
 					onChange={(e) => setTopic(e.target.value)}
-					className="border border-gray-300 p-3 rounded-lg w-full mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
-					disabled={loading}
+					placeholder="Enter quiz topic"
+					className="w-full p-3 mb-4 border rounded-lg"
 				/>
+
 				<select
 					value={difficulty}
 					onChange={(e) => setDifficulty(e.target.value)}
-					className="border border-gray-300 p-3 rounded-lg w-full mb-6 focus:outline-none focus:ring-2 focus:ring-primary"
-					disabled={loading}
+					className="w-full p-3 mb-4 border rounded-lg"
 				>
 					<option value="Beginner">Beginner</option>
 					<option value="Intermediate">Intermediate</option>
 					<option value="Advanced">Advanced</option>
 				</select>
+
 				<button
-					onClick={handleGenerateQuiz}
+					type="submit"
 					disabled={loading}
 					className={`w-full bg-primary text-secondary p-3 rounded-lg transition-colors
             ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-900'}`}
 				>
 					{loading ? 'Generating Quiz...' : 'Generate Quiz'}
 				</button>
-			</div>
-		</main>
+			</form>
+		</div>
 	);
 }

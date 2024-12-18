@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Option {
 	id: string;
@@ -11,25 +12,42 @@ interface Question {
 	id: number;
 	question: string;
 	options: Option[];
+	correctAnswer: number;
 }
 
-export default function QuizPage({ params }: { params: { id: string } }) {
+export default function QuizPage() {
+	const router = useRouter();
 	const [currentQuestion, setCurrentQuestion] = useState(0);
 	const [selectedOption, setSelectedOption] = useState<string | null>(null);
+	const [questions, setQuestions] = useState<Question[]>([]);
+	const [loading, setLoading] = useState(true);
 
-	const questions: Question[] = [
-		{
-			id: 1,
-			question: "What is the capital of France?",
-			options: [
-				{ id: "a", text: "London" },
-				{ id: "b", text: "Paris" },
-				{ id: "c", text: "Berlin" },
-				{ id: "d", text: "Madrid" }
-			]
+	useEffect(() => {
+		const quizData = localStorage.getItem('quizData');
+		if (!quizData) {
+			router.push('/setup');
+			return;
 		}
-		// Add more questions here
-	];
+
+		const parsedData = JSON.parse(quizData);
+		// Convert API response format to UI format
+		const formattedQuestions = parsedData.questions.map((q: any, index: number) => ({
+			id: index + 1,
+			question: q.question,
+			options: q.options.map((opt: string, i: number) => ({
+				id: String.fromCharCode(97 + i), // converts 0,1,2,3 to a,b,c,d
+				text: opt
+			})),
+			correctAnswer: q.correctAnswer
+		}));
+
+		setQuestions(formattedQuestions);
+		setLoading(false);
+	}, [router]);
+
+	if (loading) {
+		return <div>Loading quiz...</div>;
+	}
 
 	const handleNext = () => {
 		if (currentQuestion < questions.length - 1) {
@@ -51,8 +69,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 								key={option.id}
 								onClick={() => setSelectedOption(option.id)}
 								className={`w-full text-left p-4 rounded-lg border ${selectedOption === option.id
-										? 'bg-primary text-white'
-										: 'bg-white text-primary hover:bg-blue-50'
+									? 'bg-primary text-white'
+									: 'bg-white text-primary hover:bg-blue-50'
 									}`}
 							>
 								{option.text}

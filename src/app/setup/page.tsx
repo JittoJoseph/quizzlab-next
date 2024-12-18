@@ -24,13 +24,14 @@ export default function SetupPage() {
 				body: JSON.stringify({ topic, difficulty })
 			});
 
+			const data = await response.json();
+
 			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to generate quiz');
+				throw new Error(data.error || 'Failed to generate quiz');
 			}
 
-			const quizData = await response.json();
-			localStorage.setItem('quizData', JSON.stringify(quizData));
+			console.log(`Generated with ${data.metadata.model} in ${data.metadata.timeTaken}s`);
+			localStorage.setItem('quizData', JSON.stringify(data.quiz));
 			router.push('/quiz/1');
 		} catch (error) {
 			console.error('Failed to generate quiz:', error);

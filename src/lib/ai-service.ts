@@ -37,13 +37,20 @@ export async function fetchWithTimeout<T>(promise: Promise<T>, timeout: number):
 	]);
 }
 
-async function generateWithModel(modelName: string, prompt: string): Promise<string> {
-	console.log(`Attempting generation with ${modelName}`);
+interface GenerationMetadata {
+	model: string;
+	timeTaken: number;
+	response: string;
+}
+
+async function generateWithModel(modelName: string, prompt: string): Promise<GenerationMetadata> {
 	const startTime = Date.now();
 	const apiKey = process.env.GOOGLE_API_KEY;
+
 	if (!apiKey) {
 		throw new AIServiceError('Google API key is not configured');
 	}
+
 	const genAI = new GoogleGenerativeAI(apiKey);
 	const model = genAI.getGenerativeModel({ model: modelName });
 
@@ -52,22 +59,22 @@ async function generateWithModel(modelName: string, prompt: string): Promise<str
 		REQUEST_TIMEOUT
 	);
 
-	console.log(`${modelName} took ${(Date.now() - startTime) / 1000}s`);
-
 	if (!result?.response) {
 		throw new AIServiceError('No response from AI');
 	}
 
-	return result.response.text();
+	return {
+		model: modelName,
+		timeTaken: (Date.now() - startTime) / 1000,
+		response: result.response.text()
+	};
 }
 
-async function fetchWithRetry(prompt: string, maxAttempts = 2): Promise<string> {
+async function fetchWithRetry(prompt: string): Promise<GenerationMetadata> {
 	for (const modelName of MODELS) {
 		try {
-			console.log(`Trying model: ${modelName}`);
 			return await generateWithModel(modelName, prompt);
 		} catch (error) {
-			console.error(`Failed with ${modelName}:`, error);
 			if (modelName === MODELS[MODELS.length - 1]) {
 				throw error;
 			}
@@ -93,7 +100,7 @@ function shuffleOptions(question: any) {
 	return question;
 }
 
-export async function generateQuizContent(topic: string, difficulty: string): Promise<Quiz> {
+export async function generateQuizContent(topic: string, difficulty: string): Promise<{ quiz: Quiz, metadata: GenerationMetadata }> {
 	try {
 		if (!process.env.GOOGLE_API_KEY) {
 			throw new Error('Google API key is not configured');
@@ -119,9 +126,9 @@ Rules:
 - All options must be simple strings
 - One correct answer per question`;
 
-		const text = await fetchWithRetry(prompt);
+		const generation = await fetchWithRetry(prompt);
 
-		const processedText = text
+		const processedText = generation.response
 			.replace(/[\u201C\u201D\u2018\u2019]/g, '"')
 			.replace(/```json\s*|\s*```/g, '')
 			.replace(/\n/g, '')
@@ -160,7 +167,7 @@ Rules:
 				return shuffleOptions(q);
 			});
 
-			return parsed as Quiz;
+			return { quiz: parsed as Quiz, metadata: generation };
 
 		} catch (parseError) {
 			console.error('JSON Parse Error:', parseError);

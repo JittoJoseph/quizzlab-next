@@ -1,67 +1,49 @@
-# quizzlab/quizzlab/README.md
+# QuizzLab
 
-# Quizzlab
+A modern quiz application built with Next.js that generates dynamic quizzes using Google's Gemini AI.
 
-Quizzlab is an AI-Powered Dynamic Quiz Generator that allows users to create personalized quizzes on any topic instantly. This project is built using Next.js with TypeScript and styled with Tailwind CSS.
+## Tech Stack
+
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Google Gemini AI
+
+## Setup
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/quizzlab-next.git
+cd quizzlab-next
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Create `.env` file in root directory and add your Google API key:
+```env
+GOOGLE_API_KEY=your_api_key_here
+```
+
+4. Run development server
+```bash
+npm run dev
+```
+
+## Usage
+
+1. Enter a topic and select difficulty level
+2. Click "Generate Quiz" to create a new quiz
+3. Answer questions and see immediate feedback
+4. View your final score at the end
 
 ## Features
 
-- **Landing Page**: Introduces the application with the title "Quizzlab" and a brief description.
-- **Quiz Setup**: Users can enter a topic, select a difficulty level (Beginner, Intermediate, Advanced), and generate a quiz.
-- **Quiz Interface**: Displays quiz questions with multiple-choice options and allows users to navigate through questions.
-
-## Project Structure
-
+- Dynamic quiz generation using AI
+- Multiple difficulty levels
+- Immediate answer feedback
+- Score tracking
+- Responsive design
 ```
-quizzlab
-├── src
-│   ├── app
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   ├── quiz
-│   │   │   ├── page.tsx
-│   │   │   └── [id]
-│   │   │       └── page.tsx
-│   │   └── setup
-│   │       └── page.tsx
-│   ├── components
-│   │   ├── QuizForm.tsx
-│   │   ├── QuizInterface.tsx
-│   │   └── QuizSetup.tsx
-│   ├── types
-│   │   └── index.ts
-│   └── utils
-│       └── constants.ts
-├── tailwind.config.js
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-## Getting Started
-
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   ```
-
-2. Navigate to the project directory:
-   ```
-   cd quizzlab
-   ```
-
-3. Install dependencies:
-   ```
-   npm install
-   ```
-
-4. Run the development server:
-   ```
-   npm run dev
-   ```
-
-5. Open your browser and go to `http://localhost:3000` to see the application in action.
-
-## License
-
-This project is licensed under the MIT License.

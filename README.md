@@ -22,7 +22,7 @@ cd quizzlab-next
 npm install
 ```
 
-3. Create `.env` file in root directory and add your Google API key:
+3. Create `.env.local` file in root directory and add your Google API key:
 ```env
 GOOGLE_API_KEY=your_api_key_here
 ```
@@ -46,4 +46,3 @@ npm run dev
 - Immediate answer feedback
 - Score tracking
 - Responsive design
-```

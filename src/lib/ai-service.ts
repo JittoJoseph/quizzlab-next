@@ -113,6 +113,11 @@ function cleanupJsonString(text: string): string {
 }
 
 export async function generateQuizContent(topic: string, difficulty: string): Promise<{ quiz: Quiz, metadata: GenerationMetadata }> {
+	const selectedModel = MODELS[0]; // Currently using gemini-1.5-flash
+	const startTime = performance.now();
+
+	console.log(`Attempting to generate with ${selectedModel}...`);
+
 	try {
 		if (!process.env.GOOGLE_API_KEY) {
 			throw new Error('Google API key is not configured');
@@ -172,11 +177,20 @@ Rules:
 				return shuffleOptions(q);
 			});
 
-			return { quiz: parsed as Quiz, metadata: generation };
+			const endTime = performance.now();
+			const timeInSeconds = parseFloat(((endTime - startTime) / 1000).toFixed(2));
+			console.log(`Quiz generated in ${timeInSeconds}s`);
+
+			return {
+				quiz: parsed as Quiz,
+				metadata: {
+					model: selectedModel,
+					timeTaken: timeInSeconds,
+					response: generation.response
+				}
+			};
 
 		} catch (parseError) {
-			console.error('JSON Parse Error:', parseError);
-			console.error('Processed Text:', processedText);
 			throw new QuestionGenerationError(`Invalid JSON format: ${(parseError as Error).message}`);
 		}
 

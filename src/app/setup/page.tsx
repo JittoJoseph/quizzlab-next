@@ -12,7 +12,6 @@ export default function SetupPage() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log('Submitting form');
 		if (!topic.trim()) {
 			alert('Please enter a topic');
 			return;
@@ -34,14 +33,11 @@ export default function SetupPage() {
 			}
 
 			const data = await response.json();
-			console.log('Quiz data received:', data);
-			// Store only the quiz questions array
 			localStorage.setItem('quizData', JSON.stringify(data.quiz.questions));
 			router.push('/quiz/1');
 		} catch (error) {
 			console.error('Error:', error);
 			alert('An error occurred while generating the quiz');
-			setLoading(false);
 		} finally {
 			setLoading(false);
 		}

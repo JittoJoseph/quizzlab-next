@@ -83,10 +83,10 @@ async function fetchWithRetry(prompt: string): Promise<GenerationMetadata> {
 	throw new AIServiceError('All model attempts failed');
 }
 
-function shuffleOptions(question: any) {
+function shuffleOptions(question: QuizQuestion): QuizQuestion {
 	const optionsWithIndex = question.options.map((text: string, index: number) => ({
 		text,
-		isCorrect: index === question.correct,
+		isCorrect: index === question.correctAnswer,
 	}));
 
 	for (let i = optionsWithIndex.length - 1; i > 0; i--) {
@@ -94,8 +94,8 @@ function shuffleOptions(question: any) {
 		[optionsWithIndex[i], optionsWithIndex[j]] = [optionsWithIndex[j], optionsWithIndex[i]];
 	}
 
-	question.options = optionsWithIndex.map((opt: { text: string; isCorrect: boolean }) => opt.text);
-	question.correct = optionsWithIndex.findIndex((opt: { text: string; isCorrect: boolean }) => opt.isCorrect);
+	question.options = optionsWithIndex.map((opt) => opt.text);
+	question.correctAnswer = optionsWithIndex.findIndex((opt) => opt.isCorrect);
 
 	return question;
 }
@@ -132,14 +132,14 @@ Format as JSON:
     {
       "question": "Question text?",
       "options": ["Correct", "Wrong1", "Wrong2", "Wrong3"],
-      "correct": 0
+      "correctAnswer": 0
     }
   ]
 }
 
 Rules:
 - Exactly 4 options per question
-- correct must be 0-3 matching the correct option's position
+- correctAnswer must be 0-3 matching the correct option's position
 - All options must be simple strings
 - One correct answer per question`;
 
@@ -158,19 +158,19 @@ Rules:
 				throw new QuestionGenerationError('No questions in AI response');
 			}
 
-			parsed.questions = parsed.questions.map((q: any, index: number) => {
+			parsed.questions = parsed.questions.map((q: QuizQuestion, index: number) => {
 				if (!Array.isArray(q.options) || q.options.length !== 4) {
 					throw new QuestionGenerationError(`Invalid options array in question ${index + 1}`);
 				}
 
-				q.options = q.options.map((opt: any) => {
+				q.options = q.options.map((opt: string) => {
 					if (Array.isArray(opt)) {
 						return opt[0] || '';
 					}
 					return String(opt);
 				});
 
-				if (typeof q.correct !== 'number' || q.correct < 0 || q.correct >= q.options.length) {
+				if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
 					throw new QuestionGenerationError(`Invalid correct answer index in question ${index + 1}`);
 				}
 

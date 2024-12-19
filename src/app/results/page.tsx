@@ -21,17 +21,10 @@ export default function ResultsPage() {
 		router.push('/setup');
 	};
 
-	const handleShare = () => {
-		const text = `I scored ${score}/${total} on QuizzLab!`;
-		if (navigator.share) {
-			navigator.share({
-				title: 'My QuizzLab Score',
-				text: text,
-			});
-		} else {
-			navigator.clipboard.writeText(text);
-			alert('Score copied to clipboard!');
-		}
+	const handleBackHome = () => {
+		localStorage.removeItem('quizScore');
+		localStorage.removeItem('quizData');
+		router.push('/');
 	};
 
 	return (
@@ -58,10 +51,10 @@ export default function ResultsPage() {
 						Play Again
 					</button>
 					<button
-						onClick={handleShare}
+						onClick={handleBackHome}
 						className="w-full py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
 					>
-						Share Score
+						Back to Home
 					</button>
 				</div>
 			</div>

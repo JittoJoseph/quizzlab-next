@@ -1,4 +1,4 @@
-import { generateQuizContent, QuestionGenerationError, AIServiceError } from '@/lib/ai-service';
+import { generateQuizContent } from '@/lib/ai-service';
 import { NextResponse } from 'next/server';
 
 interface QuizRequest {

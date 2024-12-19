@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SetupPage() {
@@ -8,7 +8,6 @@ export default function SetupPage() {
 	const [topic, setTopic] = useState('');
 	const [difficulty, setDifficulty] = useState('Beginner');
 	const [loading, setLoading] = useState(false);
-	const [quizData, setQuizData] = useState(null);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

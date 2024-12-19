@@ -78,8 +78,8 @@ export default function SetupPage() {
 					type="submit"
 					disabled={loading}
 					className={`w-full p-3 rounded-lg text-white transition-all ${loading
-							? 'bg-gray-400 cursor-not-allowed'
-							: 'bg-primary hover:bg-primary-dark'
+						? 'bg-gray-400 cursor-not-allowed'
+						: 'bg-primary hover:bg-primary-dark'
 						}`}
 				>
 					{loading ? 'Generating Quiz...' : 'Generate Quiz'}

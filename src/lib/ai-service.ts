@@ -26,7 +26,7 @@ export class QuestionGenerationError extends Error {
 }
 
 const MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'] as const;
-const REQUEST_TIMEOUT = 13000;
+const REQUEST_TIMEOUT = 23000;
 
 export async function fetchWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
 	return Promise.race([

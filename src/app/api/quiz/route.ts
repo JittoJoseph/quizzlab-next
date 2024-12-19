@@ -31,22 +31,8 @@ export async function POST(request: Request) {
 	} catch (error) {
 		console.error("Quiz generation failed:", error);
 
-		if (error instanceof QuestionGenerationError) {
-			return NextResponse.json(
-				{ error: "Failed to generate quiz questions" },
-				{ status: 500 }
-			);
-		}
-
-		if (error instanceof AIServiceError) {
-			return NextResponse.json(
-				{ error: "AI service unavailable" },
-				{ status: 503 }
-			);
-		}
-
 		return NextResponse.json(
-			{ error: "Internal server error" },
+			{ error: "Failed to generate quiz questions" },
 			{ status: 500 }
 		);
 	}

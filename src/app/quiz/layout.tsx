@@ -1,9 +1,9 @@
 export const metadata = {
-	title: 'Setup Page',
-	description: 'Set up your quiz',
+	title: 'Quiz Page',
+	description: 'Take your quiz',
 };
 
-export default function SetupLayout({
+export default function QuizLayout({
 	children,
 }: {
 	children: React.ReactNode;

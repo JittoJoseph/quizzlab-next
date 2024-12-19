@@ -10,16 +10,9 @@ export default function SetupPage() {
 	const [loading, setLoading] = useState(false);
 	const [quizData, setQuizData] = useState(null);
 
-	// Handle navigation after quiz data is set
-	useEffect(() => {
-		if (quizData) {
-			localStorage.setItem('quizData', JSON.stringify(quizData));
-			router.push('/quiz/1');
-		}
-	}, [quizData, router]);
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		console.log('Submitting form');
 		if (!topic.trim()) {
 			alert('Please enter a topic');
 			return;
@@ -33,17 +26,22 @@ export default function SetupPage() {
 				body: JSON.stringify({ topic, difficulty })
 			});
 
-			const data = await response.json();
-
 			if (!response.ok) {
-				throw new Error(data.error || 'Failed to generate quiz');
+				const errorData = await response.json();
+				alert(errorData.error || 'An error occurred');
+				setLoading(false);
+				return;
 			}
 
-			// Set quiz data to trigger useEffect
-			setQuizData(data.quiz);
+			const data = await response.json();
+			console.log('Quiz data received:', data);
+			// Store only the quiz questions array
+			localStorage.setItem('quizData', JSON.stringify(data.quiz.questions));
+			router.push('/quiz/1');
 		} catch (error) {
-			console.error('Failed to generate quiz:', error);
-			alert(error instanceof Error ? error.message : 'Failed to generate quiz');
+			console.error('Error:', error);
+			alert('An error occurred while generating the quiz');
+			setLoading(false);
 		} finally {
 			setLoading(false);
 		}

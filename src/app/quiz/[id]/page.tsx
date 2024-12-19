@@ -1,25 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
-import clsx from 'clsx';
-
-interface Option {
-	id: string;
-	text: string;
-}
+import { useRouter, useParams } from 'next/navigation';
 
 interface Question {
-	id: number;
+	id?: number;
 	question: string;
-	options: Option[];
-	correctAnswer: number;
+	options: string[];
+	correct: number;
 }
 
 export default function QuizPage() {
 	const router = useRouter();
-	const searchParams = useSearchParams();
+	const params = useParams();
 	const [loading, setLoading] = useState(true);
 	const [score, setScore] = useState(0);
 	const [quizData, setQuizData] = useState<Question[]>([]);
@@ -29,91 +22,107 @@ export default function QuizPage() {
 	const [isLastQuestion, setIsLastQuestion] = useState(false);
 
 	useEffect(() => {
-		const storedQuizData = JSON.parse(localStorage.getItem('quizData') || '[]');
-		const currentQuestionNum = parseInt(searchParams.get('id') || '1');
-
-		if (!storedQuizData.length) {
+		const storedQuizData = JSON.parse(localStorage.getItem('quizData') || 'null');
+		console.log('Stored Quiz Data:', storedQuizData); // Debug log
+		if (!storedQuizData) {
 			router.push('/setup');
 			return;
 		}
-
 		setQuizData(storedQuizData);
+		const currentQuestionNum = parseInt(Array.isArray(params.id) ? params.id[0] : params.id || '1') - 1;
 		setQuestionNumber(currentQuestionNum);
-		setIsLastQuestion(currentQuestionNum === storedQuizData.length);
+		setIsLastQuestion(currentQuestionNum === storedQuizData.length - 1);
 		setLoading(false);
-	}, [searchParams, router]);
+	}, [params.id, router]);
 
-	const currentQuestion = quizData[questionNumber - 1];
-
-	const handleOptionSelect = (optionIndex: number) => {
-		if (showAnswer) return;
-		setSelectedOption(optionIndex);
+	const handleOptionSelect = (index: number) => {
+		setSelectedOption(index);
 		setShowAnswer(true);
-		if (optionIndex === currentQuestion.correctAnswer) {
+		if (index === quizData[questionNumber].correct) {
 			setScore(prev => prev + 1);
 		}
 	};
 
-	const handleNext = () => {
-		if (!showAnswer) return;
-
+	const handleNextQuestion = () => {
 		if (isLastQuestion) {
-			localStorage.setItem('quizResult', JSON.stringify({ score, total: quizData.length }));
 			router.push('/results');
-		} else {
-			setSelectedOption(null);
-			setShowAnswer(false);
-			router.push(`/quiz/${questionNumber + 1}`);
+			return;
 		}
+		router.push(`/quiz/${questionNumber + 2}`);
 	};
 
-	if (loading || !currentQuestion) {
-		return <div className="min-h-screen bg-secondary flex items-center justify-center">Loading...</div>;
-	}
+	if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;
+
+	const currentQuestion = quizData[questionNumber];
+	if (!currentQuestion) return null;
 
 	return (
-		<div className="min-h-screen bg-secondary">
-			<Header score={score} total={quizData.length} />
-			<div className="flex items-center justify-center p-4 h-screen">
-				<div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-					<h2 className="text-xl mb-4">Question {questionNumber}</h2>
-					<p className="text-lg mb-6">{currentQuestion.question}</p>
+		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-4 flex items-center justify-center">
+			<div className="w-full max-w-2xl">
+				{/* Score Display */}
+				<div className="text-center mb-4">
+					<span className="text-blue-900 text-xl font-semibold">
+						Score: {score}/{quizData.length}
+					</span>
+				</div>
 
-					<div className="space-y-3">
+				{/* Quiz Box */}
+				<div className="bg-white rounded-xl shadow-lg p-8">
+					{/* Question Header */}
+					<div className="flex justify-between items-center mb-6">
+						<span className="text-blue-900 font-bold text-xl">
+							Question {questionNumber + 1}/{quizData.length}
+						</span>
+					</div>
+
+					{/* Question */}
+					<h2 className="text-xl text-blue-900 font-medium mb-6">
+						{currentQuestion.question}
+					</h2>
+
+					{/* Options */}
+					<div className="space-y-3 mb-6">
 						{currentQuestion.options.map((option, index) => (
 							<button
-								key={index}
+								key={`question-${questionNumber}-option-${index}`}
 								onClick={() => handleOptionSelect(index)}
 								disabled={showAnswer}
-								className={clsx(
-									"w-full p-3 text-left rounded-lg transition-colors border",
-									{
-										'bg-green-100 border-green-500': showAnswer && index === currentQuestion.correctAnswer,
-										'bg-red-100 border-red-500': showAnswer && selectedOption === index && index !== currentQuestion.correctAnswer,
-										'hover:bg-gray-100': !showAnswer,
-										'border-gray-200': !showAnswer && selectedOption !== index,
-										'border-blue-500 bg-blue-50': !showAnswer && selectedOption === index
+								className={`w-full p-4 text-left rounded-lg border-2 transition-all text-gray-800
+									${showAnswer && index === currentQuestion.correct
+										? 'bg-green-50 border-green-500'
+										: showAnswer && index === selectedOption
+											? 'bg-red-50 border-red-500'
+											: selectedOption === index
+												? 'bg-blue-50 border-blue-500'
+												: 'hover:bg-gray-50 border-gray-200'
 									}
-								)}
+								`}
 							>
-								{option.text}
+								<span className="inline-block w-6 h-6 text-center mr-3 rounded-full bg-blue-100 text-blue-600">
+									{String.fromCharCode(65 + index)}
+								</span>
+								<span className="text-gray-800">{option}</span>
+								{showAnswer && (
+									index === currentQuestion.correct ? (
+										<span className="ml-2 text-green-600 font-bold">✓</span>
+									) : index === selectedOption && (
+										<span className="ml-2 text-red-600 font-bold">✗</span>
+									)
+								)}
 							</button>
 						))}
 					</div>
 
-					<button
-						onClick={handleNext}
-						disabled={!showAnswer}
-						className={clsx(
-							"w-full bg-primary text-white p-3 rounded-lg mt-6 transition-opacity",
-							{
-								'opacity-50 cursor-not-allowed': !showAnswer,
-								'hover:bg-blue-900': showAnswer
-							}
-						)}
-					>
-						{isLastQuestion ? 'Finish Quiz' : 'Next Question'}
-					</button>
+					<div className="flex justify-end pt-6">
+						<button
+							onClick={handleNextQuestion}
+							disabled={!showAnswer}
+							className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
+								transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							{isLastQuestion ? 'Finish' : 'Next'}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

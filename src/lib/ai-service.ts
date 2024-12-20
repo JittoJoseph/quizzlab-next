@@ -24,7 +24,6 @@ export class QuestionGenerationError extends Error {
 		this.name = 'QuestionGenerationError';
 	}
 }
-
 const MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'] as const;
 const REQUEST_TIMEOUT = 23000;
 
@@ -83,10 +82,12 @@ async function fetchWithRetry(prompt: string): Promise<GenerationMetadata> {
 	throw new AIServiceError('All model attempts failed');
 }
 
-function shuffleOptions(question: QuizQuestion): QuizQuestion {
+// Disable the rule for the shuffleOptions function
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function shuffleOptions(question: any) {
 	const optionsWithIndex = question.options.map((text: string, index: number) => ({
 		text,
-		isCorrect: index === question.correctAnswer,
+		isCorrect: index === question.correct,
 	}));
 
 	for (let i = optionsWithIndex.length - 1; i > 0; i--) {
@@ -94,8 +95,8 @@ function shuffleOptions(question: QuizQuestion): QuizQuestion {
 		[optionsWithIndex[i], optionsWithIndex[j]] = [optionsWithIndex[j], optionsWithIndex[i]];
 	}
 
-	question.options = optionsWithIndex.map((opt) => opt.text);
-	question.correctAnswer = optionsWithIndex.findIndex((opt) => opt.isCorrect);
+	question.options = optionsWithIndex.map((opt: { text: string; isCorrect: boolean }) => opt.text);
+	question.correct = optionsWithIndex.findIndex((opt: { text: string; isCorrect: boolean }) => opt.isCorrect);
 
 	return question;
 }
@@ -132,14 +133,14 @@ Format as JSON:
     {
       "question": "Question text?",
       "options": ["Correct", "Wrong1", "Wrong2", "Wrong3"],
-      "correctAnswer": 0
+      "correct": 0
     }
   ]
 }
 
 Rules:
 - Exactly 4 options per question
-- correctAnswer must be 0-3 matching the correct option's position
+- correct must be 0-3 matching the correct option's position
 - All options must be simple strings
 - One correct answer per question`;
 
@@ -158,19 +159,21 @@ Rules:
 				throw new QuestionGenerationError('No questions in AI response');
 			}
 
-			parsed.questions = parsed.questions.map((q: QuizQuestion, index: number) => {
+			parsed.questions = parsed.questions.map((q: any, index: number) => {
 				if (!Array.isArray(q.options) || q.options.length !== 4) {
 					throw new QuestionGenerationError(`Invalid options array in question ${index + 1}`);
 				}
 
-				q.options = q.options.map((opt: string) => {
+				q.options = q.options.map((opt: any) => {
 					if (Array.isArray(opt)) {
 						return opt[0] || '';
 					}
 					return String(opt);
 				});
 
-				if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+				/* eslint-enable @typescript-eslint/no-explicit-any */
+
+				if (typeof q.correct !== 'number' || q.correct < 0 || q.correct >= q.options.length) {
 					throw new QuestionGenerationError(`Invalid correct answer index in question ${index + 1}`);
 				}
 

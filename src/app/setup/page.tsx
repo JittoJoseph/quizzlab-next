@@ -51,7 +51,7 @@ export default function SetupPage() {
 						href="/"
 						className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
 					>
-						Quizzlab
+						QuizzLab
 					</Link>
 				</div>
 			</header>

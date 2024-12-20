@@ -62,7 +62,7 @@ export default function QuizPage() {
 	if (!currentQuestion) return null;
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex flex-col">
+		<main className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex flex-col items-center justify-center p-6">
 			{/* Fixed Header */}
 			<div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-sm z-10">
 				<div className="container mx-auto px-4 h-16 flex justify-between items-center">
@@ -140,6 +140,6 @@ export default function QuizPage() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

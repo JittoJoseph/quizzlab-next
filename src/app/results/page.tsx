@@ -28,8 +28,8 @@ export default function ResultsPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
-			<div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full mx-4">
+		<main className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center p-6">
+			<div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
 				<h1 className="text-3xl font-bold text-blue-900 mb-6 text-center">Quiz Complete!</h1>
 
 				<div className="text-center mb-8">
@@ -46,18 +46,21 @@ export default function ResultsPage() {
 				<div className="space-y-4">
 					<button
 						onClick={handlePlayAgain}
-						className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+						className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg 
+							hover:bg-blue-700 transition-all hover:-translate-y-0.5 
+							font-medium shadow-lg hover:shadow-xl"
 					>
 						Play Again
 					</button>
 					<button
 						onClick={handleBackHome}
-						className="w-full py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+						className="w-full px-6 py-3 border-2 border-blue-600 text-blue-600 
+							rounded-lg hover:bg-blue-50 transition-all font-medium"
 					>
 						Back to Home
 					</button>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

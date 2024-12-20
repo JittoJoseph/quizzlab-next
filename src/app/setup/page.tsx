@@ -43,41 +43,61 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-secondary flex items-center justify-center p-4">
-			<form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-				<h1 className="text-2xl font-bold text-primary mb-6 text-center">Create Quiz</h1>
+		<main className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center px-6 py-12">
+			<div className="w-full max-w-md">
+				<div className="bg-white rounded-xl p-8 shadow-lg">
+					<h1 className="text-3xl font-bold text-blue-900 mb-6 text-center">
+						Setup Your Quiz
+					</h1>
 
-				<input
-					type="text"
-					value={topic}
-					onChange={(e) => setTopic(e.target.value)}
-					placeholder="Enter quiz topic"
-					className="w-full p-3 mb-4 border rounded-lg"
-					disabled={loading}
-				/>
+					<form onSubmit={handleSubmit} className="space-y-6">
+						<div className="space-y-2">
+							<label htmlFor="topic" className="block text-blue-800 font-medium">
+								Topic
+							</label>
+							<input
+								id="topic"
+								type="text"
+								value={topic}
+								onChange={(e) => setTopic(e.target.value)}
+								className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								placeholder="Enter quiz topic..."
+								disabled={loading}
+							/>
+						</div>
 
-				<select
-					value={difficulty}
-					onChange={(e) => setDifficulty(e.target.value)}
-					className="w-full p-3 mb-4 border rounded-lg"
-					disabled={loading}
-				>
-					<option value="Beginner">Beginner</option>
-					<option value="Intermediate">Intermediate</option>
-					<option value="Advanced">Advanced</option>
-				</select>
+						<div className="space-y-2">
+							<label htmlFor="difficulty" className="block text-blue-800 font-medium">
+								Difficulty
+							</label>
+							<select
+								id="difficulty"
+								value={difficulty}
+								onChange={(e) => setDifficulty(e.target.value)}
+								className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								disabled={loading}
+							>
+								{['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+									<option key={level} value={level}>
+										{level}
+									</option>
+								))}
+							</select>
+						</div>
 
-				<button
-					type="submit"
-					disabled={loading}
-					className={`w-full p-3 rounded-lg text-white transition-all ${loading
-						? 'bg-gray-400 cursor-not-allowed'
-						: 'bg-primary hover:bg-primary-dark'
-						}`}
-				>
-					{loading ? 'Generating Quiz...' : 'Generate Quiz'}
-				</button>
-			</form>
-		</div>
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg 
+                  hover:bg-blue-700 transition-all hover:-translate-y-0.5 
+                  font-medium shadow-lg hover:shadow-xl disabled:opacity-50 
+                  disabled:cursor-not-allowed disabled:hover:translate-y-0"
+						>
+							{loading ? 'Generating Quiz...' : 'Generate Quiz'}
+						</button>
+					</form>
+				</div>
+			</div>
+		</main>
 	);
 }
